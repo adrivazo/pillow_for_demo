@@ -13,13 +13,15 @@ boolean is_button_pressed(int PIN, boolean OLD_STATE);
 
 
 
-boolean is_hugged();
-boolean is_squeezed();
-boolean is_stroked();
+boolean isHugged();
+boolean isSqueezed();
+boolean isStroked();
 
-void send_hello(); // if is stroked
-void send_thought(); // if is squeezed
-void send_hug(); // if is hugged
+void sendMessage(int);
+void sendHello(); // if is stroked
+void sendThought(); // if is squeezed
+void sendHug(); // if is hugged
+
 
 boolean is_reply_hug();
 boolean is_reply_squeeze();
@@ -33,9 +35,12 @@ void show_hug();
 void show_thought();
 void show_hello();
 
-#define MISS_YOU 0 //hug
-#define THINK_OF_YOU 1 // squeeze
-#define HELLO 2 //stroke 
+/////ACTIONS
+
+#define NONE 0
+#define MISS_YOU 1//hug
+#define THINK_OF_YOU 2 // squeeze
+#define HELLO 3 //stroke 
 
 
 #define FAKE_HUG_BUTTON A3
@@ -44,9 +49,9 @@ void show_hello();
 #define CORNER_SQUEEZE 10
 #define SIDE_HUG 9
 //#define BUTTON_PIN   10    // Digital IO pin connected to the button.  This will be
-                          // driven with a pull-up resistor so the switch should
-                          // pull the pin to ground momentarily.  On a high -> low
-                          // transition the button press logic will execute.
+// driven with a pull-up resistor so the switch should
+// pull the pin to ground momentarily.  On a high -> low
+// transition the button press logic will execute.
 
 #define PIXEL_PIN    6    // Digital IO pin connected to the NeoPixels.
 #define PIXEL_COUNT 16
@@ -89,105 +94,116 @@ void setup() {
 
   Serial.begin(9600);
   Serial.println("Adafruit MPR121 Capacitive Touch sensor test");
-  
+
   // Default address is 0x5A, if tied to 3.3V its 0x5B
   // If tied to SDA its 0x5C and if SCL then 0x5D
   if (HAVE_CAP && !cap.begin(0x5A)) {
     Serial.println("MPR121 not found, check wiring?");
     while (1);
   }
-  
-  if(HAVE_CAP){
-  //lowering threshold
-  Serial.println("MPR121 found!");
+
+  if (HAVE_CAP) {
+    //lowering threshold
+    Serial.println("MPR121 found!");
   }
-   
+
   pinMode(FAKE_HUG_BUTTON, INPUT_PULLUP);
   pinMode(FAKE_THINK_BUTTON, INPUT_PULLUP);
   pinMode(FAKE_HELLO_BUTTON, INPUT_PULLUP);
   pinMode(CORNER_SQUEEZE, INPUT_PULLUP);
   pinMode(SIDE_HUG, INPUT_PULLUP);
- 
+
   strip.begin();
   strip.show(); // Initialize all pixels to 'off'
-  
+
 
 }
 
 void loop() {
-  
-  
-  if(is_hugged()){
+
+  int message = 0;
+  if (isHugged()) {
     Serial.println("is hugged");
-    startShow(1);
-    send_hug();
+
+    message = MISS_YOU;
   }
-  
-  else if(is_squeezed()){
+
+  else if (isSqueezed()) {
     Serial.println("is squeezed");
-    startShow(2);
-    send_thought();
+    message = THINK_OF_YOU;
+
   }
-  
-  else if(is_stroked()){
+
+  else if (isStroked()) {
     Serial.println("is stroked");
-    startShow(3);
-    send_thought();
+    message = HELLO;
   }
-  
-  else if(is_reply_squeeze()){
-     Serial.println("is reply squeeze");
-     startShow(4);
-  }
-  
-  else if(is_reply_hug()){
-     Serial.println("is reply hug");
-    startShow(5);
-  }
-  
-  else if(is_reply_stroke()){
-     Serial.println("is reply stroke");
-    startShow(6);
-  }
-  
-  
-  
 
-  // comment out this line for detailed data from the sensor!
-  return;
+  startShow(message);
 
-  
-  
+  if (message == MISS_YOU ||
+      message == THINK_OF_YOU || 
+      message == HELLO || 
+      message == NONE){
+          startShow(NONE);// stop sendint message
+    }
+
+else if (is_reply_squeeze()) {
+  Serial.println("is reply squeeze");
+  startShow(4);
+}
+
+else if (is_reply_hug()) {
+  Serial.println("is reply hug");
+  startShow(5);
+}
+
+else if (is_reply_stroke()) {
+  Serial.println("is reply stroke");
+  startShow(6);
+}
+
+// comment out this line for detailed data from the sensor!
+return;
+
+
+
+}
+
+void sendMessage(int message) {
+  switch (message) {
+    case NONE: startShow(NONE);    //off
+      break;
+  }
 }
 
 
+boolean is_button_pressed(int BUTTON, boolean OLD_STATE ) {
+  /*
+    //PUSH BUTTON
+    // Get current button state.
+    bool newState = digitalRead(BUTTON_PIN);
+    //Serial.println(digitalRead(BUTTON_PIN));
 
-boolean is_button_pressed(int BUTTON, boolean OLD_STATE ){
-/*
-  //PUSH BUTTON
-  // Get current button state.
-  bool newState = digitalRead(BUTTON_PIN);
-  //Serial.println(digitalRead(BUTTON_PIN));
-  
-  // Check if state changed from high to low (button press).
-  if (newState == LOW && oldState == HIGH) {
-    // Short delay to debounce button.
-    delay(20);
-    // Check if button is still low after debounce.
-    newState = digitalRead(BUTTON_PIN);
-    if (newState == LOW) {
-      showType++;
-      if (showType > 9)
-        showType=0;
-      startShow(showType);
+    // Check if state changed from high to low (button press).
+    if (newState == LOW && oldState == HIGH) {
+      // Short delay to debounce button.
+      delay(20);
+      // Check if button is still low after debounce.
+      newState = digitalRead(BUTTON_PIN);
+      if (newState == LOW) {
+        showType++;
+        if (showType > 9)
+          showType=0;
+        startShow(showType);
+      }
     }
-  }
-  // Set the last button state to the old state.
-  oldState = newState;
-  */
-  boolean is_on=false;
+    // Set the last button state to the old state.
+    oldState = newState;
+    */
+  boolean is_on = false;
   bool newState = digitalRead(BUTTON);
-  //Serial.println(digitalRead(BUTTON_PIN));  
+  //Serial.println(digitalRead(BUTTON_PIN));
   // Check if state changed from high to low (button press).
   if (newState == LOW && OLD_STATE == HIGH) {
     // Short delay to debounce button.
@@ -205,93 +221,96 @@ boolean is_button_pressed(int BUTTON, boolean OLD_STATE ){
 
 
 
-boolean is_stroked(){
-  
-  if(HAVE_CAP){
-  // CAPACITIVE TOUCH SENSOR
+boolean isStroked() {
+
+  if (HAVE_CAP) {
+    // CAPACITIVE TOUCH SENSOR
     // Get the currently touched pads
-  currtouched = cap.touched();
-  // to keep track of which pad is being touched
-  for (uint8_t i=0; i<12; i++) {
-    // it if *is* touched and *wasnt* touched before, alert!
-    if ((currtouched & _BV(i)) && !(lasttouched & _BV(i)) ) {
-      Serial.print(i); Serial.println(" touched");
-      startShow(i);
+    currtouched = cap.touched();
+    // to keep track of which pad is  touched
+    for (uint8_t i = 0; i < 12; i++) {
+      // it if *is* touched and *wasnt* touched before, alert!
+      if ((currtouched & _BV(i)) && !(lasttouched & _BV(i)) ) {
+        Serial.print(i); Serial.println(" touched");
+        startShow(i);
+      }
+      // if it *was* touched and now *isnt*, alert!
+      if (!(currtouched & _BV(i)) && (lasttouched & _BV(i)) ) {
+        Serial.print(i); Serial.println(" released");
+        startShow(0);
+      }
     }
-    // if it *was* touched and now *isnt*, alert!
-    if (!(currtouched & _BV(i)) && (lasttouched & _BV(i)) ) {
-      Serial.print(i); Serial.println(" released");
-      startShow(0);
-    }
-  }
     // reset our state
-  lasttouched = currtouched;
+    lasttouched = currtouched;
   }
   return false;
 }
 
 
 
-boolean is_hugged(){
+boolean isHugged() {
   return is_button_pressed(SIDE_HUG, oldStateSideHug);
 }
-boolean is_squeezed(){
+boolean isSqueezed() {
   return is_button_pressed(CORNER_SQUEEZE, oldStateCornerSqueeze);
 }
-boolean is_reply_hug(){
-  return is_button_pressed(FAKE_HUG_BUTTON, oldStateFakeHello);}
+boolean is_reply_hug() {
+  return is_button_pressed(FAKE_HUG_BUTTON, oldStateFakeHello);
+}
 
-boolean is_reply_squeeze(){
-  return is_button_pressed(FAKE_THINK_BUTTON, oldStateFakeThink);}
+boolean is_reply_squeeze() {
+  return is_button_pressed(FAKE_THINK_BUTTON, oldStateFakeThink);
+}
 
-boolean is_reply_stroke(){
-  return is_button_pressed(FAKE_HELLO_BUTTON, oldStateFakeHug);}
+boolean is_reply_stroke() {
+  return is_button_pressed(FAKE_HELLO_BUTTON, oldStateFakeHug);
+}
 
 
 
 
 void startShow(int i) {
-  switch(i){
+  switch (i) {
     case 0: colorWipe(strip.Color(0, 0, 0), 10);    // Black/off
-            break;
+      break;
     case 1: colorWipe(strip.Color(255, 0, 0), 10);  // Red
-            break;
+      break;
     case 2: colorWipe(strip.Color(0, 255, 0), 10);  // Green
-            break;
+      break;
     case 3: colorWipe(strip.Color(0, 0, 255), 10);  // Blue
-            break;
+      break;
     case 4: theaterChase(strip.Color(127, 127, 127), 10); // White
-            break;
+      break;
     case 5: theaterChase(strip.Color(127,   0,   0), 10); // Red
-            break;
+      break;
     case 6: theaterChase(strip.Color(  0,   0, 127), 10); // Blue
-            break;
+      break;
     case 7: rainbow(20);
-            break;
+      break;
     case 8: rainbowCycle(20);
-            break;
+      break;
     case 9: theaterChaseRainbow(50);
-            break;
+      break;
     case 10: colorWipe(strip.Color(0, 0, 0), 10);    // Black/off
-            break;
+      break;
   }
 }
 
 // Fill the dots one after the other with a color
 void colorWipe(uint32_t c, uint8_t wait) {
-  for(uint16_t i=0; i<strip.numPixels(); i++) {
-      strip.setPixelColor(i, c);
-      strip.show();
-      delay(wait);
+  for (uint16_t i = 0; i < strip.numPixels(); i++) {
+    strip.setPixelColor(i, c);
+    strip.show();
+    delay(wait);
   }
 }
 
 void rainbow(uint8_t wait) {
   uint16_t i, j;
 
-  for(j=0; j<256; j++) {
-    for(i=0; i<strip.numPixels(); i++) {
-      strip.setPixelColor(i, Wheel((i+j) & 255));
+  for (j = 0; j < 256; j++) {
+    for (i = 0; i < strip.numPixels(); i++) {
+      strip.setPixelColor(i, Wheel((i + j) & 255));
     }
     strip.show();
     delay(wait);
@@ -302,8 +321,8 @@ void rainbow(uint8_t wait) {
 void rainbowCycle(uint8_t wait) {
   uint16_t i, j;
 
-  for(j=0; j<256*5; j++) { // 5 cycles of all colors on wheel
-    for(i=0; i< strip.numPixels(); i++) {
+  for (j = 0; j < 256 * 5; j++) { // 5 cycles of all colors on wheel
+    for (i = 0; i < strip.numPixels(); i++) {
       strip.setPixelColor(i, Wheel(((i * 256 / strip.numPixels()) + j) & 255));
     }
     strip.show();
@@ -313,17 +332,17 @@ void rainbowCycle(uint8_t wait) {
 
 //Theatre-style crawling lights.
 void theaterChase(uint32_t c, uint8_t wait) {
-  for (int j=0; j<10; j++) {  //do 10 cycles of chasing
-    for (int q=0; q < 3; q++) {
-      for (int i=0; i < strip.numPixels(); i=i+3) {
-        strip.setPixelColor(i+q, c);    //turn every third pixel on
+  for (int j = 0; j < 10; j++) { //do 10 cycles of chasing
+    for (int q = 0; q < 3; q++) {
+      for (int i = 0; i < strip.numPixels(); i = i + 3) {
+        strip.setPixelColor(i + q, c);  //turn every third pixel on
       }
       strip.show();
-     
+
       delay(wait);
-     
-      for (int i=0; i < strip.numPixels(); i=i+3) {
-        strip.setPixelColor(i+q, 0);        //turn every third pixel off
+
+      for (int i = 0; i < strip.numPixels(); i = i + 3) {
+        strip.setPixelColor(i + q, 0);      //turn every third pixel off
       }
     }
   }
@@ -331,18 +350,18 @@ void theaterChase(uint32_t c, uint8_t wait) {
 
 //Theatre-style crawling lights with rainbow effect
 void theaterChaseRainbow(uint8_t wait) {
-  for (int j=0; j < 256; j++) {     // cycle all 256 colors in the wheel
-    for (int q=0; q < 3; q++) {
-        for (int i=0; i < strip.numPixels(); i=i+3) {
-          strip.setPixelColor(i+q, Wheel( (i+j) % 255));    //turn every third pixel on
-        }
-        strip.show();
-       
-        delay(wait);
-       
-        for (int i=0; i < strip.numPixels(); i=i+3) {
-          strip.setPixelColor(i+q, 0);        //turn every third pixel off
-        }
+  for (int j = 0; j < 256; j++) {   // cycle all 256 colors in the wheel
+    for (int q = 0; q < 3; q++) {
+      for (int i = 0; i < strip.numPixels(); i = i + 3) {
+        strip.setPixelColor(i + q, Wheel( (i + j) % 255)); //turn every third pixel on
+      }
+      strip.show();
+
+      delay(wait);
+
+      for (int i = 0; i < strip.numPixels(); i = i + 3) {
+        strip.setPixelColor(i + q, 0);      //turn every third pixel off
+      }
     }
   }
 }
@@ -351,14 +370,14 @@ void theaterChaseRainbow(uint8_t wait) {
 // The colours are a transition r - g - b - back to r.
 uint32_t Wheel(byte WheelPos) {
   WheelPos = 255 - WheelPos;
-  if(WheelPos < 85) {
-   return strip.Color(255 - WheelPos * 3, 0, WheelPos * 3);
-  } else if(WheelPos < 170) {
+  if (WheelPos < 85) {
+    return strip.Color(255 - WheelPos * 3, 0, WheelPos * 3);
+  } else if (WheelPos < 170) {
     WheelPos -= 85;
-   return strip.Color(0, WheelPos * 3, 255 - WheelPos * 3);
+    return strip.Color(0, WheelPos * 3, 255 - WheelPos * 3);
   } else {
-   WheelPos -= 170;
-   return strip.Color(WheelPos * 3, 255 - WheelPos * 3, 0);
+    WheelPos -= 170;
+    return strip.Color(WheelPos * 3, 255 - WheelPos * 3, 0);
   }
 }
 
