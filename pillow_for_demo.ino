@@ -11,8 +11,6 @@
 
 boolean is_button_pressed(int PIN, boolean OLD_STATE);
 
-
-
 boolean isHugged();
 boolean isSqueezed();
 boolean isStroked();
@@ -22,14 +20,10 @@ void sendHello(); // if is stroked
 void sendThought(); // if is squeezed
 void sendHug(); // if is hugged
 
-
-boolean is_reply_hug();
-boolean is_reply_squeeze();
-boolean is_reply_stroke();
-
-boolean is_received_hug();
-boolean is_received_thought();
-boolean is_received_hello();
+// functions for the simulated actions - for the simulated actions
+boolean receivedHug();
+boolean receivedThought();
+boolean receivedHello();
 
 void show_hug();
 void show_thought();
@@ -60,6 +54,13 @@ void show_hello();
 #define OTHER_COLOR "BLUE" // 76, 196, 255
 #define LAST_COLOR "GREEN"// 3, 255, 94
 
+#define YELLOW 0
+#define BLUE 1
+#define GREEN 2
+#define BLUE 3
+#define RED 4
+#define PURPLE 5
+
 boolean HAVE_CAP = false;
 
 // You can have up to 4 on one i2c bus but one is enough for testing!
@@ -88,6 +89,10 @@ bool oldStateCornerSqueeze = HIGH;
 bool oldStateSideHug = HIGH;
 
 int showType = 0;
+volatile int receivedMessages = 0; // number of received messages before clearing
+volatile int receivedColors[5] = {0, 0, 0, 0, 0}; // all yellow
+int message = 0;
+int replied = 0;
 
 void setup() {
   while (!Serial);        // needed to keep leonardo/micro from starting too fast!
@@ -115,23 +120,20 @@ void setup() {
 
   strip.begin();
   strip.show(); // Initialize all pixels to 'off'
-
-
 }
 
 void loop() {
 
-  int message = 0;
+  // interaction with pillow by user
+
   if (isHugged()) {
     Serial.println("is hugged");
-
     message = MISS_YOU;
   }
 
   else if (isSqueezed()) {
     Serial.println("is squeezed");
     message = THINK_OF_YOU;
-
   }
 
   else if (isStroked()) {
@@ -139,32 +141,40 @@ void loop() {
     message = HELLO;
   }
 
-  startShow(message);
+ 
 
   if (message == MISS_YOU ||
-      message == THINK_OF_YOU || 
-      message == HELLO || 
-      message == NONE){
-          startShow(NONE);// stop sendint message
-    }
+      message == THINK_OF_YOU ||
+      message == HELLO) {
+    startShow(message);
+    message=NONE;//clear message
+    startShow(NONE);// stop sendint message
+    receivedMessages = 0; // reset the number of received messages
+  }
 
-else if (is_reply_squeeze()) {
-  Serial.println("is reply squeeze");
-  startShow(4);
-}
+  /// received a message. ideally should be in interrupts but since we are using simple lilypad, we don't have those pins available
+  //determine color received (i.e. from who)
+  // depending on the number of messages queued, should display one or more colors
+  
+  if (receivedHug()) {
+    receivedMessages++;
+    Serial.println("received hug");
+    startShow(4);
+  }
 
-else if (is_reply_hug()) {
-  Serial.println("is reply hug");
-  startShow(5);
-}
+  else if (receivedThought()) {
+    receivedMessages++;
+    Serial.println("received thought");
+    startShow(5);
+  }
+  else if (receivedHello()) {
+    receivedMessages++;
+    Serial.println("received hello");
+    startShow(6);
+  }
 
-else if (is_reply_stroke()) {
-  Serial.println("is reply stroke");
-  startShow(6);
-}
-
-// comment out this line for detailed data from the sensor!
-return;
+  // comment out this line for detailed data from the sensor!
+  return;
 
 
 
@@ -179,28 +189,6 @@ void sendMessage(int message) {
 
 
 boolean is_button_pressed(int BUTTON, boolean OLD_STATE ) {
-  /*
-    //PUSH BUTTON
-    // Get current button state.
-    bool newState = digitalRead(BUTTON_PIN);
-    //Serial.println(digitalRead(BUTTON_PIN));
-
-    // Check if state changed from high to low (button press).
-    if (newState == LOW && oldState == HIGH) {
-      // Short delay to debounce button.
-      delay(20);
-      // Check if button is still low after debounce.
-      newState = digitalRead(BUTTON_PIN);
-      if (newState == LOW) {
-        showType++;
-        if (showType > 9)
-          showType=0;
-        startShow(showType);
-      }
-    }
-    // Set the last button state to the old state.
-    oldState = newState;
-    */
   boolean is_on = false;
   bool newState = digitalRead(BUTTON);
   //Serial.println(digitalRead(BUTTON_PIN));
@@ -254,16 +242,16 @@ boolean isHugged() {
 boolean isSqueezed() {
   return is_button_pressed(CORNER_SQUEEZE, oldStateCornerSqueeze);
 }
-boolean is_reply_hug() {
-  return is_button_pressed(FAKE_HUG_BUTTON, oldStateFakeHello);
+boolean receivedHug() {
+  return is_button_pressed(FAKE_HUG_BUTTON, oldStateFakeHug);
 }
 
-boolean is_reply_squeeze() {
+boolean receivedThought() {
   return is_button_pressed(FAKE_THINK_BUTTON, oldStateFakeThink);
 }
 
-boolean is_reply_stroke() {
-  return is_button_pressed(FAKE_HELLO_BUTTON, oldStateFakeHug);
+boolean receivedHello() {
+  return is_button_pressed(FAKE_HELLO_BUTTON, oldStateFakeHello);
 }
 
 
