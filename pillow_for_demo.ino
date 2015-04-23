@@ -55,7 +55,7 @@ void show_hello();
 #define LAST_COLOR "GREEN"// 3, 255, 94
 
 #define YELLOW 0
-#define BLUE 1
+#define TURQUOISE 1
 #define GREEN 2
 #define BLUE 3
 #define RED 4
@@ -263,7 +263,7 @@ void startShow(int i) {
       break;
     case 1: colorWipe(strip.Color(255, 0, 0), 10);  // Red
       break;
-    case 2: colorWipe(strip.Color(0, 255, 0), 10);  // Green
+    case 2: spiralInAndOut(strip.Color(3, 255, 94), 20);  // Green 3, 255, 94
       break;
     case 3: colorWipe(strip.Color(0, 0, 255), 10);  // Blue
       break;
@@ -291,6 +291,27 @@ void colorWipe(uint32_t c, uint8_t wait) {
     strip.show();
     delay(wait);
   }
+}
+
+
+// Fill the dots one after the other with a color
+void spiralInAndOut(uint32_t c, uint8_t wait) {
+ 
+ 
+  for (uint16_t i = strip.numPixels()-1; i >0 ; i--) {
+   Serial.println(i);
+    strip.setPixelColor(i, c);
+    delay(wait);
+  }
+ 
+  for (uint16_t i = 0; i < strip.numPixels(); i++) {
+   Serial.println(i);
+    strip.setPixelColor(i, c);
+    strip.show();
+    delay(wait);
+  }
+  
+ 
 }
 
 void rainbow(uint8_t wait) {
