@@ -261,7 +261,7 @@ void startShow(int i) {
   switch (i) {
     case 0: colorWipe(strip.Color(0, 0, 0), 10);    // Black/off
       break;
-    case 1: colorWipe(strip.Color(255, 0, 0), 10);  // Red
+    case 1: colorGlow();//colorWipe(strip.Color(255, 0, 0), 10);  // Red
       break;
     case 2: spiralInAndOut(strip.Color(3, 255, 94), 20);  // Green 3, 255, 94
       break;
@@ -269,7 +269,7 @@ void startShow(int i) {
       break;
     case 4: theaterChase(strip.Color(127, 127, 127), 10); // White
       break;
-    case 5: theaterChase(strip.Color(127,   0,   0), 10); // Red
+    case 5: colorGlow(strip.Color(127,   0,   0), 10); // Red
       break;
     case 6: theaterChase(strip.Color(  0,   0, 127), 10); // Blue
       break;
@@ -296,23 +296,66 @@ void colorWipe(uint32_t c, uint8_t wait) {
 
 // Fill the dots one after the other with a color
 void spiralInAndOut(uint32_t c, uint8_t wait) {
- 
- 
+
+// turn them on one by one, starting with center pixel
   for (uint16_t i = strip.numPixels()-1; i >0 ; i--) {
-   Serial.println(i);
-    strip.setPixelColor(i, c);
-    delay(wait);
-  }
- 
-  for (uint16_t i = 0; i < strip.numPixels(); i++) {
    Serial.println(i);
     strip.setPixelColor(i, c);
     strip.show();
     delay(wait);
   }
   
+  delay(wait * 100);
+  
+// turn them off one by one, starting with outer pixel
  
+  for (uint16_t i = 0; i < strip.numPixels(); i++) {
+   Serial.println(i);
+    strip.setPixelColor(i, strip.Color(0,0,0)); 
+    strip.show();
+    delay(wait);
+  }
 }
+
+
+// Fill the dots one after the other with a color
+void colorGlow() {
+  for(int j = 0; j < 256; j++) {
+    for(int i=0; i<strip.numPixels(); i++) {
+      strip.setPixelColor(i, strip.Color(j, j, j));
+      strip.show();
+      delay(2);
+    }
+  }
+  for(int j = 255; j > 0; j--) {
+    for(int i=0; i<strip.numPixels(); i++) {
+      strip.setPixelColor(i, strip.Color(j, j, j));
+      strip.show();
+      delay(2);
+    }
+  }
+}
+
+
+void colorGlow(uint32_t c, uint8_t wait){
+  for(int j = 0; j < 256; j++) {
+    for(int i=0; i<strip.numPixels(); i++) {
+      strip.setPixelColor(i, c);
+      strip.setBrightness(j);
+      strip.show();
+    }
+  }
+  
+  delay(wait);
+  for(int j = 255; j > 0; j--) {
+    for(int i=0; i<strip.numPixels(); i++) {
+      strip.setPixelColor(i, c);
+      strip.setBrightness(j);
+      strip.show();
+    }
+  }
+}
+
 
 void rainbow(uint8_t wait) {
   uint16_t i, j;
