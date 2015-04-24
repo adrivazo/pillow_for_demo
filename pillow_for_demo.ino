@@ -296,21 +296,18 @@ void colorWipe(uint32_t c, uint8_t wait) {
 
 // Fill the dots one after the other with a color
 void spiralInAndOut(uint32_t c, uint8_t wait) {
-
 // turn them on one by one, starting with center pixel
-  for (uint16_t i = strip.numPixels()-1; i >0 ; i--) {
-   Serial.println(i);
+  for (uint16_t i = strip.numPixels()-1; i >=0 ; i--) {
     strip.setPixelColor(i, c);
     strip.show();
     delay(wait);
+    Serial.println(i);
   }
-  
+Serial.println("hiiiii");
   delay(wait * 100);
   
 // turn them off one by one, starting with outer pixel
- 
   for (uint16_t i = 0; i < strip.numPixels(); i++) {
-   Serial.println(i);
     strip.setPixelColor(i, strip.Color(0,0,0)); 
     strip.show();
     delay(wait);
@@ -346,7 +343,7 @@ void colorGlow(uint32_t c, uint8_t wait){
     }
   }
   
-  delay(wait);
+  delay(wait*3);
   for(int j = 255; j > 0; j--) {
     for(int i=0; i<strip.numPixels(); i++) {
       strip.setPixelColor(i, c);
