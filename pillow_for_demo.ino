@@ -34,14 +34,13 @@ void show_hello();
 /////ACTIONS
 
 #define NONE -1
-#define HELLO_0 0
 #define MISS_YOU 1//hug
-#define THINK_OF_YOU 5 // squeeze
-#define HELLO_0 3 //stroke 
-#define HELLO_1 2 // by sections of the spiral
-#define HELLO_2 4
-#define HELLO_3 6
-#define HELLO_4 8
+#define HELLO_0 2 //stroke 
+#define THINK_OF_YOU 3 // squeeze
+#define HELLO_1 4 // by sections of the spiral
+#define HELLO_2 6
+#define HELLO_3 8
+#define HELLO_4 10
 
 #define FAKE_HUG_BUTTON A3
 #define FAKE_THINK_BUTTON A2
@@ -109,11 +108,11 @@ volatile int section_2[3] = {12,6,2};
 volatile int section_3[4] = {7,0,1,11}; 
 volatile int section_4[3] = {10,9,8}; 
 
-int up_to_0[2] = {15,14};
-int up_to_1[6] = {15,14,13,5,4,3}; 
-int up_to_2[9] = {15,14,13,12,6,5,4,3,2}; 
-int up_to_3[13] = {15,14,13,12,6,5,4,3,2,7,0,1,11}; 
-int all[16] = {15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0};         // need it? would be all
+const int up_to_0[2] = {15,14};
+const int up_to_1[6] = {15,14,13,5,4,3}; 
+const int up_to_2[9] = {15,14,13,12,6,5,4,3,2}; 
+const int up_to_3[13] = {15,14,13,12,6,5,4,3,2,7,0,1,11}; 
+const int all[16] = {15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0};         // need it? would be all
 
 void setup() {
   while (!Serial);        // needed to keep leonardo/micro from starting too fast!
@@ -248,7 +247,7 @@ int isStroked() {
       if ((currtouched & _BV(i)) && !(lasttouched & _BV(i)) ) {
         Serial.print(i); Serial.println(" touched");
         //startShow(i);
-        return i;
+        return i+2;
       }
       // if it *was* touched and now *isnt*, alert!
       if (!(currtouched & _BV(i)) && (lasttouched & _BV(i)) ) {
@@ -281,42 +280,54 @@ boolean receivedHello() {
 }
 
 /*
-#define NONE 0
+#define NONE -1
 #define MISS_YOU 1//hug
-#define THINK_OF_YOU 5 // squeeze
-#define HELLO 3 //stroke 
-#define HELLO_1 2 // by sections of the spiral
-#define HELLO_2 4
-#define HELLO_3 6
-#define HELLO_4 8
+#define HELLO_0 2 //stroke 
+#define THINK_OF_YOU 3 // squeeze
+#define HELLO_1 4 // by sections of the spiral
+#define HELLO_2 6
+#define HELLO_3 8
+#define HELLO_4 10
+
 */
 
 
 void startShow(int i) {
   switch (i) {
-    case -1: colorWipe(strip.Color(0, 0, 0), 10);    // Black/off
-      break;
+    //-1
     case NONE: colorWipe(strip.Color(0, 0, 0), 10);    // Black/off
       break;
-    case MISS_YOU: spiralInAndOut(strip.Color(3, 255, 94), 20);  // Green 3, 255, 94 colorGlow();//colorWipe(strip.Color(255, 0, 0), 10);  // Red
+      //1
+     case MISS_YOU: spiralInAndOut(strip.Color(3, 255, 94), 20);  // Green 3, 255, 94 colorGlow();//colorWipe(strip.Color(255, 0, 0), 10);  // Red
       break;
-    case 2: lightSection(strip.Color(3,255,94), 20, up_to_1);
+      //2
+    case HELLO_0:lightSection(strip.Color(3,255,94), 20, up_to_0,  sizeof(up_to_0)/sizeof(up_to_0[0])); //colorWipe(strip.Color(0, 0, 0), 10);    // Black/off
       break;
-    case 3: colorWipe(strip.Color(0, 0, 255), 10);  // Blue
+      //3
+    case THINK_OF_YOU: colorGlow(strip.Color(127,   0,   0), 10); // Red
       break;
-    case 4: lightSection(strip.Color(3,255,94), 20, up_to_2);//theaterChase(strip.Color(127, 127, 127), 10); // White
+      //4
+    case HELLO_1: lightSection(strip.Color(3,255,94), 20, up_to_1, sizeof(up_to_1)/sizeof(up_to_1[0]));
       break;
-    case 5: colorGlow(strip.Color(127,   0,   0), 10); // Red
+      //6
+    case HELLO_2: lightSection(strip.Color(3,255,94), 20, up_to_2,sizeof(up_to_2)/sizeof(up_to_2[0]));//colorWipe(strip.Color(0, 0, 255), 10);  // Blue
       break;
-    case 6: lightSection(strip.Color(3,255,94), 20, up_to_3);//theaterChase(strip.Color(  0,   0, 127), 10); // Blue
+      //8
+    case HELLO_3: lightSection(strip.Color(3,255,94), 20, up_to_3, sizeof(up_to_3)/sizeof(up_to_3[0]));//theaterChase(strip.Color(127, 127, 127), 10); // White
       break;
-    case 7: rainbow(20);
+      //10
+    case HELLO_4: 
+      Serial.println("Hello all");
+      lightSection(strip.Color(3,255,94), 20, all,  sizeof(all)/sizeof(all[0]));//theaterChase(strip.Color(  0,   0, 127), 10); // Blue
+    
       break;
-    case 8: lightSection(strip.Color(3,255,94), 20, all);//rainbowCycle(20);
+    case 5: rainbow(20);
+      break;
+    case 7:theaterChase(strip.Color(  0,   0, 127), 10);//rainbowCycle(20);
       break;
     case 9: theaterChaseRainbow(50);
       break;
-    case 10: colorWipe(strip.Color(0, 0, 0), 10);    // Black/off
+    case 11: theaterChase(strip.Color(  0,   0, 127), 10);//colorWipe(strip.Color(0, 0, 0), 10);    // Black/off
       break;
   }
 }
@@ -388,15 +399,16 @@ void colorGlow(uint32_t c, uint8_t wait){
 }
 
 
-void lightSection(uint32_t c, uint8_t wait, int pixels[]){
-  int numberOfPixels =  sizeof(pixels);// / sizeof(pixels[0]);
+void lightSection(uint32_t c, uint8_t wait, const int pixels[], int numberOfPixels){
   Serial.print("Lighting up pixels ");
   Serial.println(numberOfPixels);
 
   for (uint16_t i =0; i<numberOfPixels; i++){
       strip.setPixelColor(pixels[i], c);
-       strip.show();
+      strip.show();
   }
+  delay(wait*5);
+
 
 }
 
