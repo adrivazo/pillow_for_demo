@@ -9,11 +9,13 @@
 #include <Wire.h>
 #include <Adafruit_MPR121.h>
 
+boolean HAVE_CAP = true;
+
 boolean is_button_pressed(int PIN, boolean OLD_STATE);
 
 boolean isHugged();
 boolean isSqueezed();
-boolean isStroked();
+int isStroked();
 
 void sendMessage(int);
 void sendHello(); // if is stroked
@@ -33,9 +35,12 @@ void show_hello();
 
 #define NONE 0
 #define MISS_YOU 1//hug
-#define THINK_OF_YOU 2 // squeeze
+#define THINK_OF_YOU 5 // squeeze
 #define HELLO 3 //stroke 
-
+#define HELLO_1 2 // by sections
+#define HELLO_2 4
+#define HELLO_3 6
+#define HELLO_4 8
 
 #define FAKE_HUG_BUTTON A3
 #define FAKE_THINK_BUTTON A2
@@ -61,7 +66,7 @@ void show_hello();
 #define RED 4
 #define PURPLE 5
 
-boolean HAVE_CAP = false;
+
 
 // You can have up to 4 on one i2c bus but one is enough for testing!
 Adafruit_MPR121 cap = Adafruit_MPR121();
@@ -93,6 +98,21 @@ volatile int receivedMessages = 0; // number of received messages before clearin
 volatile int receivedColors[5] = {0, 0, 0, 0, 0}; // all yellow
 int message = 0;
 int replied = 0;
+
+volatile int what_lights_to_light_up[16] = {-1, -1, -1, -1, 
+                                   -1, -1, -1, -1, 
+                                   -1, -1, -1, -1,
+                                   -1, -1, -1, -1 }; // for the hello lights 
+
+volatile int section_1[6] = {15,14,13,5,4,3}; 
+volatile int section_2[3] = {12,6,2}; 
+volatile int section_3[4] = {7,0,1,11}; 
+volatile int section_4[3] = {10,9,8}; 
+
+volatile int up_to_1[6] = {15,14,13,5,4,3}; 
+volatile int up_to_2[9] = {15,14,13,12,6,5,4,3,2}; 
+volatile int up_to_3[13] = {15,14,13,12,6,5,4,3,2,7,0,1,11}; 
+//volatile int section_4[3] = {10,9,8};         // need it? would be all
 
 void setup() {
   while (!Serial);        // needed to keep leonardo/micro from starting too fast!
@@ -138,6 +158,9 @@ void loop() {
 
   else if (isStroked()) {
     Serial.println("is stroked");
+    // depending on which touch pad is stroked, should light up different parts of the spiral
+    
+    
     message = HELLO;
   }
 
@@ -159,24 +182,22 @@ void loop() {
   if (receivedHug()) {
     receivedMessages++;
     Serial.println("received hug");
-    startShow(4);
+    startShow(14);
   }
 
   else if (receivedThought()) {
     receivedMessages++;
     Serial.println("received thought");
-    startShow(5);
+    startShow(15);
   }
   else if (receivedHello()) {
     receivedMessages++;
     Serial.println("received hello");
-    startShow(6);
+    startShow(16);
   }
 
   // comment out this line for detailed data from the sensor!
   return;
-
-
 
 }
 
@@ -207,10 +228,9 @@ boolean is_button_pressed(int BUTTON, boolean OLD_STATE ) {
   return is_on;
 }
 
-
-
-boolean isStroked() {
-
+// returns 0 if false or returns the number of the conductive strip touched
+//so options are 2, 4, 6 and 8
+int isStroked() {
   if (HAVE_CAP) {
     // CAPACITIVE TOUCH SENSOR
     // Get the currently touched pads
@@ -220,7 +240,8 @@ boolean isStroked() {
       // it if *is* touched and *wasnt* touched before, alert!
       if ((currtouched & _BV(i)) && !(lasttouched & _BV(i)) ) {
         Serial.print(i); Serial.println(" touched");
-        startShow(i);
+        //startShow(i);
+        return i;
       }
       // if it *was* touched and now *isnt*, alert!
       if (!(currtouched & _BV(i)) && (lasttouched & _BV(i)) ) {
@@ -233,8 +254,6 @@ boolean isStroked() {
   }
   return false;
 }
-
-
 
 boolean isHugged() {
   return is_button_pressed(SIDE_HUG, oldStateSideHug);
@@ -297,13 +316,11 @@ void colorWipe(uint32_t c, uint8_t wait) {
 // Fill the dots one after the other with a color
 void spiralInAndOut(uint32_t c, uint8_t wait) {
 // turn them on one by one, starting with center pixel
-  for (uint16_t i = strip.numPixels()-1; i >=0 ; i--) {
+  for (int i = strip.numPixels()-1; i>-1 ; i--) {
     strip.setPixelColor(i, c);
     strip.show();
     delay(wait);
-    Serial.println(i);
   }
-Serial.println("hiiiii");
   delay(wait * 100);
   
 // turn them off one by one, starting with outer pixel
@@ -313,7 +330,6 @@ Serial.println("hiiiii");
     delay(wait);
   }
 }
-
 
 // Fill the dots one after the other with a color
 void colorGlow() {
@@ -351,6 +367,15 @@ void colorGlow(uint32_t c, uint8_t wait){
       strip.show();
     }
   }
+}
+
+
+void lightSection(uint32_t c, uint8_t wait, int pixels[]){
+  int numberOfPixels =  sizeof(pixels) / sizeof(pixels[0]);
+  for (uint16_t i =0; i<numberOfPixels; i++){
+      strip.setPixelColor(pixels[i], c);
+  }
+  strip.show();
 }
 
 
