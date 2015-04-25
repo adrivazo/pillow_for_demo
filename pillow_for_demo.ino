@@ -33,11 +33,12 @@ void show_hello();
 
 /////ACTIONS
 
-#define NONE 0
+#define NONE -1
+#define HELLO_0 0
 #define MISS_YOU 1//hug
 #define THINK_OF_YOU 5 // squeeze
-#define HELLO 3 //stroke 
-#define HELLO_1 2 // by sections
+#define HELLO_0 3 //stroke 
+#define HELLO_1 2 // by sections of the spiral
 #define HELLO_2 4
 #define HELLO_3 6
 #define HELLO_4 8
@@ -65,8 +66,6 @@ void show_hello();
 #define BLUE 3
 #define RED 4
 #define PURPLE 5
-
-
 
 // You can have up to 4 on one i2c bus but one is enough for testing!
 Adafruit_MPR121 cap = Adafruit_MPR121();
@@ -104,15 +103,17 @@ volatile int what_lights_to_light_up[16] = {-1, -1, -1, -1,
                                    -1, -1, -1, -1,
                                    -1, -1, -1, -1 }; // for the hello lights 
 
-volatile int section_1[6] = {15,14,13,5,4,3}; 
+volatile int section_0[2] = {15,14}; 
+volatile int section_1[4] = {13,5,4,3}; 
 volatile int section_2[3] = {12,6,2}; 
 volatile int section_3[4] = {7,0,1,11}; 
 volatile int section_4[3] = {10,9,8}; 
 
-volatile int up_to_1[6] = {15,14,13,5,4,3}; 
-volatile int up_to_2[9] = {15,14,13,12,6,5,4,3,2}; 
-volatile int up_to_3[13] = {15,14,13,12,6,5,4,3,2,7,0,1,11}; 
-//volatile int section_4[3] = {10,9,8};         // need it? would be all
+int up_to_0[2] = {15,14};
+int up_to_1[6] = {15,14,13,5,4,3}; 
+int up_to_2[9] = {15,14,13,12,6,5,4,3,2}; 
+int up_to_3[13] = {15,14,13,12,6,5,4,3,2,7,0,1,11}; 
+int all[16] = {15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0};         // need it? would be all
 
 void setup() {
   while (!Serial);        // needed to keep leonardo/micro from starting too fast!
@@ -145,7 +146,8 @@ void setup() {
 void loop() {
 
   // interaction with pillow by user
-
+  int strokedMessage = 0;
+  
   if (isHugged()) {
     Serial.println("is hugged");
     message = MISS_YOU;
@@ -156,19 +158,24 @@ void loop() {
     message = THINK_OF_YOU;
   }
 
-  else if (isStroked()) {
+  else if (strokedMessage = isStroked()) {
     Serial.println("is stroked");
     // depending on which touch pad is stroked, should light up different parts of the spiral
-    
-    
-    message = HELLO;
+    Serial.print("Stroked message ");
+    Serial.println(strokedMessage);
+    message = strokedMessage;  
+//    message = HELLO;
   }
-
+  
  
-
   if (message == MISS_YOU ||
       message == THINK_OF_YOU ||
-      message == HELLO) {
+      message == HELLO_0 ||
+      message == HELLO_1 ||
+      message == HELLO_2 ||
+      message == HELLO_3 ||
+      message == HELLO_4
+      ) {
     startShow(message);
     message=NONE;//clear message
     startShow(NONE);// stop sendint message
@@ -246,7 +253,7 @@ int isStroked() {
       // if it *was* touched and now *isnt*, alert!
       if (!(currtouched & _BV(i)) && (lasttouched & _BV(i)) ) {
         Serial.print(i); Serial.println(" released");
-        startShow(0);
+        startShow(NONE);
       }
     }
     // reset our state
@@ -273,28 +280,39 @@ boolean receivedHello() {
   return is_button_pressed(FAKE_HELLO_BUTTON, oldStateFakeHello);
 }
 
-
+/*
+#define NONE 0
+#define MISS_YOU 1//hug
+#define THINK_OF_YOU 5 // squeeze
+#define HELLO 3 //stroke 
+#define HELLO_1 2 // by sections of the spiral
+#define HELLO_2 4
+#define HELLO_3 6
+#define HELLO_4 8
+*/
 
 
 void startShow(int i) {
   switch (i) {
-    case 0: colorWipe(strip.Color(0, 0, 0), 10);    // Black/off
+    case -1: colorWipe(strip.Color(0, 0, 0), 10);    // Black/off
       break;
-    case 1: colorGlow();//colorWipe(strip.Color(255, 0, 0), 10);  // Red
+    case NONE: colorWipe(strip.Color(0, 0, 0), 10);    // Black/off
       break;
-    case 2: spiralInAndOut(strip.Color(3, 255, 94), 20);  // Green 3, 255, 94
+    case MISS_YOU: spiralInAndOut(strip.Color(3, 255, 94), 20);  // Green 3, 255, 94 colorGlow();//colorWipe(strip.Color(255, 0, 0), 10);  // Red
+      break;
+    case 2: lightSection(strip.Color(3,255,94), 20, up_to_1);
       break;
     case 3: colorWipe(strip.Color(0, 0, 255), 10);  // Blue
       break;
-    case 4: theaterChase(strip.Color(127, 127, 127), 10); // White
+    case 4: lightSection(strip.Color(3,255,94), 20, up_to_2);//theaterChase(strip.Color(127, 127, 127), 10); // White
       break;
     case 5: colorGlow(strip.Color(127,   0,   0), 10); // Red
       break;
-    case 6: theaterChase(strip.Color(  0,   0, 127), 10); // Blue
+    case 6: lightSection(strip.Color(3,255,94), 20, up_to_3);//theaterChase(strip.Color(  0,   0, 127), 10); // Blue
       break;
     case 7: rainbow(20);
       break;
-    case 8: rainbowCycle(20);
+    case 8: lightSection(strip.Color(3,255,94), 20, all);//rainbowCycle(20);
       break;
     case 9: theaterChaseRainbow(50);
       break;
@@ -371,11 +389,15 @@ void colorGlow(uint32_t c, uint8_t wait){
 
 
 void lightSection(uint32_t c, uint8_t wait, int pixels[]){
-  int numberOfPixels =  sizeof(pixels) / sizeof(pixels[0]);
+  int numberOfPixels =  sizeof(pixels);// / sizeof(pixels[0]);
+  Serial.print("Lighting up pixels ");
+  Serial.println(numberOfPixels);
+
   for (uint16_t i =0; i<numberOfPixels; i++){
       strip.setPixelColor(pixels[i], c);
+       strip.show();
   }
-  strip.show();
+
 }
 
 
