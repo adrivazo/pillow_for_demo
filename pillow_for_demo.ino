@@ -46,9 +46,9 @@ void show_hello();
 #define RECEIVED_THOUGHT 7
 #define RECEIVED_HELLO 9
 
-#define FAKE_HUG_BUTTON A3
-#define FAKE_THINK_BUTTON A2
-#define FAKE_HELLO_BUTTON 11
+#define FAKE_HUG_BUTTON A3  //3
+#define FAKE_THINK_BUTTON A2 //2 
+#define FAKE_HELLO_BUTTON 11 //1 
 #define CORNER_SQUEEZE 10
 #define SIDE_HUG 9
 //#define BUTTON_PIN   10    // Digital IO pin connected to the button.  This will be
@@ -92,10 +92,23 @@ Adafruit_NeoPixel strip = Adafruit_NeoPixel(PIXEL_COUNT, PIXEL_PIN, NEO_GRB + NE
 uint32_t green = strip.Color(3, 255, 94);
 uint32_t yellow = strip.Color(255, 247, 9);
 uint32_t blue = strip.Color(76, 196, 255);
+uint32_t pink = strip.Color(232, 52, 226);
 
-uint32_t my_color = green;
-uint32_t other_color = yellow;
-uint32_t another_color = blue;
+//pillow 1, no cap
+//uint32_t my_color = green;
+//uint32_t other_color = yellow;
+//uint32_t another_color = blue;
+
+//pillow 2, cap
+//uint32_t my_color = yellow;
+//uint32_t other_color = green;
+//uint32_t another_color = blue;
+
+//pillow 3 
+uint32_t my_color = pink;
+uint32_t other_color = green;
+uint32_t another_color = yellow;
+
 
 // variables to keep track of the old button states
 bool oldState = HIGH;
@@ -154,79 +167,84 @@ void setup() {
 }
 
 void loop() {
+  // interaction with pillow by user
+  int strokedMessage = 0;
   
-receivedColors[0] = green;
-receivedColors[1] = blue;
-  
-  spiralInAndOut(receivedColors, 2, 20);
-  
-  
-//  // interaction with pillow by user
-//  int strokedMessage = 0;
-//  
-//  if (isHugged()) {
-//    Serial.println("is hugged");
-//    message = MISS_YOU;
-//  }
-//
-//  else if (isSqueezed()) {
-//    Serial.println("is squeezed");
-//    message = THINK_OF_YOU;
-//  }
-//
-//  else if (strokedMessage = isStroked()) {
-//    Serial.println("is stroked");
-//    // depending on which touch pad is stroked, should light up different parts of the spiral
-//    Serial.print("Stroked message ");
-//    Serial.println(strokedMessage);
-//    message = strokedMessage;
-//  }
-// 
-// //if the message is one of the hello's
-//  if (message == MISS_YOU ||
-//      message == THINK_OF_YOU ||
-//      message == HELLO_0 ||
-//      message == HELLO_1 ||
-//      message == HELLO_2 ||
-//      message == HELLO_3 ||
-//      message == HELLO_4
-//      ) {
-//    startShow(message, my_color, 10);
-//    message=NONE;//clear message
-//    startShow(NONE);// stop sendint message
-//    receivedMessages = 0; // reset the number of received messages
-//  }
-//
-//  /// received a message. ideally should be in interrupts but since we are using simple lilypad, we don't have those pins available
-//  //determine color received (i.e. from who)
-//  // depending on the number of messages queued, should display one or more colors
-//  
-//  if (receivedHug()) {
-//    receivedMessages++;
-//    Serial.println("received hug");
-//    message = RECEIVED_HUG;
-//  }
-//
-//  else if (receivedThought()) {
-//    receivedMessages++;
-//    Serial.println("received thought");
-//    message = RECEIVED_THOUGHT;
-//  }
-//  else if (receivedHello()) {
-//    receivedMessages++;
-//    Serial.println("received hello");
-//    message = RECEIVED_HELLO;
-//  }
-//  
-//  if(message == RECEIVED_HUG || 
-//    message ==  RECEIVED_THOUGHT || 
-//    message == RECEIVED_HELLO){
-//    
-//    startShow(message, other_color, 10);
-//    // don't clear message
-//  }
-//  return;
+  if (isHugged()) {
+    Serial.println("is hugged");
+    message = MISS_YOU;
+  }
 
+  else if (isSqueezed()) {
+    Serial.println("is squeezed");
+    message = THINK_OF_YOU;
+  }
+
+  else if (strokedMessage = isStroked()) {
+    Serial.println("is stroked");
+    // depending on which touch pad is stroked, should light up different parts of the spiral
+    Serial.print("Stroked message ");
+    Serial.println(strokedMessage);
+    message = strokedMessage;
+  }
+ 
+ //if the message is one of the hello's
+  if (message == MISS_YOU ||
+      message == THINK_OF_YOU ||
+      message == HELLO_0 ||
+      message == HELLO_1 ||
+      message == HELLO_2 ||
+      message == HELLO_3 ||
+      message == HELLO_4
+      ) {
+     Serial.print("procesing message from pillow action");   
+     Serial.println(message);
+    startShow(message, my_color, 10);
+     Serial.println("Done with show");
+    message=NONE;//clear message
+    startShow(NONE);// stop sendint message
+    receivedMessages = 0; // reset the number of received messages
+  }
+
+  /// received a message. ideally should be in interrupts but since we are using simple lilypad, we don't have those pins available
+  //determine color received (i.e. from who)
+  // depending on the number of messages queued, should display one or more colors
+  
+  if (receivedHug()) {
+    receivedMessages++;
+    Serial.println("received hug");
+    message = RECEIVED_HUG;
+  }
+
+  else if (receivedThought()) {
+    receivedMessages++;
+    Serial.println("received thought");
+    message = RECEIVED_THOUGHT;
+  }
+  else if (receivedHello()) {
+    receivedMessages++;
+    Serial.println("received hello");
+    message = RECEIVED_HELLO;
+  }
+  
+  if(
+    message ==  RECEIVED_THOUGHT || 
+    message == RECEIVED_HELLO){
+    
+    startShow(message, other_color, 10);
+    // don't clear message
+  }
+  
+   if(message == RECEIVED_HUG ){
+    receivedColors[0] = other_color;
+    receivedColors[1] = another_color;
+    receivedColors[2] = my_color;
+    startShow(RECEIVED_THOUGHT, receivedColors, 3, 10); 
+    // don't clear 
+  }
+  
+  
+  return;
 }
 
 void sendMessage(int message) {
@@ -327,6 +345,7 @@ void startShow(int i) {
 
 
 void startShow(int i, uint32_t c, uint8_t wait) {
+    Serial.println("Got single color message");
   switch (i) {
     //-1
     case NONE: colorWipe(strip.Color(0, 0, 0), 10);    // Black/off
@@ -370,7 +389,8 @@ void startShow(int i, uint32_t c, uint8_t wait) {
 }
 
 
-void startShow(int i, uint32_t colors [], int differentColors, uint8_t wait) {
+void startShow(int i, uint32_t colors[], int differentColors, uint8_t wait) {
+  Serial.println("Got a multiple color message");
   switch(i){
   case RECEIVED_HUG: spiralInAndOut(colors, differentColors, wait); //rainbow(20);
       break;
@@ -400,16 +420,22 @@ void colorWipe(uint32_t c, uint8_t wait) {
 // Fill the dots one after the other with a color
 void spiralInAndOut(uint32_t c, uint8_t wait) {
 // turn them on one by one, starting with center pixel
+
+Serial.print("Spiral in and out with color ");
+ Serial.println(c);
+ 
   for (int i = strip.numPixels()-1; i>-1 ; i--) {
     strip.setPixelColor(i, c);
+    Serial.println(i);
     strip.show();
-    delay(wait);
+    delay(wait*5);
   }
-  delay(wait * 100);
+  delay(wait * 20);
   
 // turn them off one by one, starting with outer pixel
   for (uint16_t i = 0; i < strip.numPixels(); i++) {
     strip.setPixelColor(i, strip.Color(0,0,0)); 
+        Serial.println(i);
     strip.show();
     delay(wait);
   }
@@ -419,13 +445,14 @@ void spiralInAndOut(uint32_t c, uint8_t wait) {
 // Fill the dots one after the other with a color
 void spiralInAndOut(uint32_t colors [], int differentColors, uint8_t wait) {
 // turn them on one by one, starting with center pixel
+  wait = wait * 5;
   for (int i = strip.numPixels()-1; i>-1 ; i--) {
     uint32_t color = colors[i%differentColors];
     strip.setPixelColor(i, color);
     strip.show();
     delay(wait);
   }
-  delay(wait * 100);
+  delay(wait * 20);
   
 // turn them off one by one, starting with outer pixel
   for (uint16_t i = 0; i < strip.numPixels(); i++) {
