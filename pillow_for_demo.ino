@@ -63,7 +63,6 @@ void show_hello();
 #define OTHER_COLOR "BLUE" // 76, 196, 255
 #define LAST_COLOR "GREEN"// 3, 255, 94
 
-
 #define YELLOW 0
 #define TURQUOISE 1
 #define GREEN 2
@@ -89,12 +88,16 @@ uint16_t currtouched = 0;
 //   NEO_KHZ800  800 KHz bitstream (e.g. High Density LED strip), correct for neopixel stick
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(PIXEL_COUNT, PIXEL_PIN, NEO_GRB + NEO_KHZ800);
 
-// 3, 255, 94
+// Colors
 uint32_t green = strip.Color(3, 255, 94);
-uint32_t my_color = green;
 uint32_t yellow = strip.Color(255, 247, 9);
-uint32_t other_color = yellow;
+uint32_t blue = strip.Color(76, 196, 255);
 
+uint32_t my_color = green;
+uint32_t other_color = yellow;
+uint32_t another_color = blue;
+
+// variables to keep track of the old button states
 bool oldState = HIGH;
 bool oldStateFakeHug = HIGH;
 bool oldStateFakeThink = HIGH;
@@ -104,16 +107,13 @@ bool oldStateSideHug = HIGH;
 
 int showType = 0;
 volatile int receivedMessages = 0; // number of received messages before clearing
-volatile int receivedColors[5] = {0, 0, 0, 0, 0}; // all yellow
+volatile int colorsQueued = 0;// number of colors in the message queue
+uint32_t receivedColors[5] = {0, 0, 0, 0, 0};
+volatile int colorQueueIndex =0;
 int message = 0;
 int replied = 0;
 
-volatile int what_lights_to_light_up[16] = {-1, -1, -1, -1, 
-                                   -1, -1, -1, -1, 
-                                   -1, -1, -1, -1,
-                                   -1, -1, -1, -1 }; // for the hello lights 
-
-volatile int section_0[2] = {15,14}; 
+volatile int section_0[2] = {15,14}; // don't need them right now as we are using instead the arrays below, just for reference
 volatile int section_1[4] = {13,5,4,3}; 
 volatile int section_2[3] = {12,6,2}; 
 volatile int section_3[4] = {7,0,1,11}; 
@@ -123,7 +123,7 @@ const int up_to_0[2] = {0,1};
 const int up_to_1[6] = {0,1,2,10,11,12}; 
 const int up_to_2[9] = {0,1,2,3,9,10,11,12,13}; 
 const int up_to_3[13] = {0,1,2,3,4,8,9,10,11,12,13,14,15}; 
-const int all[16] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};         // need it? would be all
+const int all[16] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
 
 void setup() {
   while (!Serial);        // needed to keep leonardo/micro from starting too fast!
@@ -154,76 +154,78 @@ void setup() {
 }
 
 void loop() {
-  // interaction with pillow by user
-  int strokedMessage = 0;
   
-  if (isHugged()) {
-    Serial.println("is hugged");
-    message = MISS_YOU;
-  }
-
-  else if (isSqueezed()) {
-    Serial.println("is squeezed");
-    message = THINK_OF_YOU;
-  }
-
-  else if (strokedMessage = isStroked()) {
-    Serial.println("is stroked");
-    // depending on which touch pad is stroked, should light up different parts of the spiral
-    Serial.print("Stroked message ");
-    Serial.println(strokedMessage);
-    message = strokedMessage;
-  }
- 
- //if the message is one of the hello's
-  if (message == MISS_YOU ||
-      message == THINK_OF_YOU ||
-      message == HELLO_0 ||
-      message == HELLO_1 ||
-      message == HELLO_2 ||
-      message == HELLO_3 ||
-      message == HELLO_4
-      ) {
-    startShow(message, my_color, 10);
-    message=NONE;//clear message
-    startShow(NONE);// stop sendint message
-    receivedMessages = 0; // reset the number of received messages
-  }
-
-  /// received a message. ideally should be in interrupts but since we are using simple lilypad, we don't have those pins available
-  //determine color received (i.e. from who)
-  // depending on the number of messages queued, should display one or more colors
+receivedColors[0] = green;
+receivedColors[1] = blue;
   
-  if (receivedHug()) {
-    receivedMessages++;
-    Serial.println("received hug");
-    message = RECEIVED_HUG;
-    //startShow(14);
-  }
-
-  else if (receivedThought()) {
-    receivedMessages++;
-    Serial.println("received thought");
-    message = RECEIVED_THOUGHT;
-    //startShow(15);
-  }
-  else if (receivedHello()) {
-    receivedMessages++;
-    Serial.println("received hello");
-    message = RECEIVED_HELLO;
-    //startShow(16);
-  }
+  spiralInAndOut(receivedColors, 2, 20);
   
   
-  if(message == RECEIVED_HUG || 
-  message ==  RECEIVED_THOUGHT || 
-  message == RECEIVED_HELLO){
-    
-    startShow(message, other_color, 10);
-  }
-
-  // comment out this line for detailed data from the sensor!
-  return;
+//  // interaction with pillow by user
+//  int strokedMessage = 0;
+//  
+//  if (isHugged()) {
+//    Serial.println("is hugged");
+//    message = MISS_YOU;
+//  }
+//
+//  else if (isSqueezed()) {
+//    Serial.println("is squeezed");
+//    message = THINK_OF_YOU;
+//  }
+//
+//  else if (strokedMessage = isStroked()) {
+//    Serial.println("is stroked");
+//    // depending on which touch pad is stroked, should light up different parts of the spiral
+//    Serial.print("Stroked message ");
+//    Serial.println(strokedMessage);
+//    message = strokedMessage;
+//  }
+// 
+// //if the message is one of the hello's
+//  if (message == MISS_YOU ||
+//      message == THINK_OF_YOU ||
+//      message == HELLO_0 ||
+//      message == HELLO_1 ||
+//      message == HELLO_2 ||
+//      message == HELLO_3 ||
+//      message == HELLO_4
+//      ) {
+//    startShow(message, my_color, 10);
+//    message=NONE;//clear message
+//    startShow(NONE);// stop sendint message
+//    receivedMessages = 0; // reset the number of received messages
+//  }
+//
+//  /// received a message. ideally should be in interrupts but since we are using simple lilypad, we don't have those pins available
+//  //determine color received (i.e. from who)
+//  // depending on the number of messages queued, should display one or more colors
+//  
+//  if (receivedHug()) {
+//    receivedMessages++;
+//    Serial.println("received hug");
+//    message = RECEIVED_HUG;
+//  }
+//
+//  else if (receivedThought()) {
+//    receivedMessages++;
+//    Serial.println("received thought");
+//    message = RECEIVED_THOUGHT;
+//  }
+//  else if (receivedHello()) {
+//    receivedMessages++;
+//    Serial.println("received hello");
+//    message = RECEIVED_HELLO;
+//  }
+//  
+//  if(message == RECEIVED_HUG || 
+//    message ==  RECEIVED_THOUGHT || 
+//    message == RECEIVED_HELLO){
+//    
+//    startShow(message, other_color, 10);
+//    // don't clear message
+//  }
+//  return;
 
 }
 
@@ -308,7 +310,6 @@ boolean receivedHello() {
 #define HELLO_2 6
 #define HELLO_3 8
 #define HELLO_4 10
-
 #define RECEIVED_HUG 5
 #define RECEIVED_THOUGHT 7
 #define RECEIVED_HELLO 9
@@ -369,6 +370,21 @@ void startShow(int i, uint32_t c, uint8_t wait) {
 }
 
 
+void startShow(int i, uint32_t colors [], int differentColors, uint8_t wait) {
+  switch(i){
+  case RECEIVED_HUG: spiralInAndOut(colors, differentColors, wait); //rainbow(20);
+      break;
+    case RECEIVED_THOUGHT: colorGlow(colors, differentColors, wait);//theaterChase(strip.Color(  0,   0, 127), 10);//rainbowCycle(20);
+      break;
+    case RECEIVED_HELLO: 
+          lightSection(colors, differentColors, wait, up_to_0,  sizeof(up_to_0)/sizeof(up_to_0[0]));
+          lightSection(colors, differentColors, wait, up_to_1, sizeof(up_to_1)/sizeof(up_to_1[0]));
+          lightSection(colors, differentColors, wait, up_to_2,sizeof(up_to_2)/sizeof(up_to_2[0]));
+          lightSection(colors, differentColors, wait, up_to_3, sizeof(up_to_3)/sizeof(up_to_3[0]));
+          lightSection(colors, differentColors, wait, all,  sizeof(all)/sizeof(all[0]));          
+      break;
+  }
+}
 
 
 // Fill the dots one after the other with a color
@@ -399,25 +415,29 @@ void spiralInAndOut(uint32_t c, uint8_t wait) {
   }
 }
 
+
 // Fill the dots one after the other with a color
-void colorGlow() {
-  for(int j = 0; j < 256; j++) {
-    for(int i=0; i<strip.numPixels(); i++) {
-      strip.setPixelColor(i, strip.Color(j, j, j));
-      strip.show();
-      delay(2);
-    }
+void spiralInAndOut(uint32_t colors [], int differentColors, uint8_t wait) {
+// turn them on one by one, starting with center pixel
+  for (int i = strip.numPixels()-1; i>-1 ; i--) {
+    uint32_t color = colors[i%differentColors];
+    strip.setPixelColor(i, color);
+    strip.show();
+    delay(wait);
   }
-  for(int j = 255; j > 0; j--) {
-    for(int i=0; i<strip.numPixels(); i++) {
-      strip.setPixelColor(i, strip.Color(j, j, j));
-      strip.show();
-      delay(2);
-    }
+  delay(wait * 100);
+  
+// turn them off one by one, starting with outer pixel
+  for (uint16_t i = 0; i < strip.numPixels(); i++) {
+    strip.setPixelColor(i, strip.Color(0,0,0)); 
+    strip.show();
+    delay(wait);
   }
 }
 
 
+
+//lights up all pixes in a fade in, fade out way
 void colorGlow(uint32_t c, uint8_t wait){
   for(int j = 0; j < 256; j++) {
     for(int i=0; i<strip.numPixels(); i++) {
@@ -426,8 +446,7 @@ void colorGlow(uint32_t c, uint8_t wait){
       strip.show();
     }
   }
-  
-  delay(wait*3);
+  delay(wait*4);
   for(int j = 255; j > 0; j--) {
     for(int i=0; i<strip.numPixels(); i++) {
       strip.setPixelColor(i, c);
@@ -437,11 +456,30 @@ void colorGlow(uint32_t c, uint8_t wait){
   }
 }
 
+//lights up all pixes in a fade in, fade out way
+void colorGlow(uint32_t colors[], int differentColors, uint8_t wait){
+  for(int j = 0; j < 256; j++) {
+    for(int i=0; i<strip.numPixels(); i++) {
+      strip.setPixelColor(i, colors[i%differentColors]);
+      strip.setBrightness(j);
+      strip.show();
+    }
+  }
+  delay(wait*4);
+  for(int j = 255; j > 0; j--) {
+    for(int i=0; i<strip.numPixels(); i++) {
+      strip.setPixelColor(i, colors[i%differentColors]);
+      strip.setBrightness(j);
+      strip.show();
+    }
+  }
+}
 
+
+// lights up the pixels in the pixels array
 void lightSection(uint32_t c, uint8_t wait, const int pixels[], int numberOfPixels){
   Serial.print("Lighting up pixels ");
   Serial.println(numberOfPixels);
-
   for (uint16_t i =0; i<numberOfPixels; i++){
       strip.setPixelColor(pixels[i], c);
 
@@ -451,6 +489,22 @@ void lightSection(uint32_t c, uint8_t wait, const int pixels[], int numberOfPixe
 
 
 }
+
+
+// lights up the pixels in the pixels array
+void lightSection(uint32_t colors [], int differentColors,  uint8_t wait, const int pixels[], int numberOfPixels){
+  Serial.print("Lighting up pixels ");
+  Serial.println(numberOfPixels);
+  for (uint16_t i =0; i<numberOfPixels; i++){
+      strip.setPixelColor(pixels[i], colors[i%differentColors]);
+
+  }
+  strip.show();
+  delay(wait*40);
+
+
+}
+
 
 
 void rainbow(uint8_t wait) {
