@@ -9,7 +9,7 @@
 #include <Wire.h>
 #include <Adafruit_MPR121.h>
 
-boolean HAVE_CAP = false;
+boolean HAVE_CAP = true;
 
 boolean is_button_pressed(int PIN, boolean OLD_STATE);
 
@@ -41,7 +41,7 @@ void show_hello();
 #define HELLO_2 6
 #define HELLO_3 8
 #define HELLO_4 10
-
+// interections for demo
 #define RECEIVED_HUG 5
 #define RECEIVED_THOUGHT 7
 #define RECEIVED_HELLO 9
@@ -78,7 +78,6 @@ Adafruit_MPR121 cap = Adafruit_MPR121();
 uint16_t lasttouched = 0;
 uint16_t currtouched = 0;
 
-
 // Parameter 1 = number of pixels in strip,  neopixel stick has 8
 // Parameter 2 = pin number (most are valid)
 // Parameter 3 = pixel type flags, add together as needed:
@@ -100,15 +99,14 @@ uint32_t pink = strip.Color(232, 52, 226);
 //uint32_t another_color = blue;
 
 //pillow 2, cap
-//uint32_t my_color = yellow;
-//uint32_t other_color = green;
-//uint32_t another_color = blue;
+uint32_t my_color = yellow;
+uint32_t other_color = green;
+uint32_t another_color = blue;
 
 //pillow 3 
-uint32_t my_color = pink;
-uint32_t other_color = green;
-uint32_t another_color = yellow;
-
+//uint32_t my_color = pink;
+//uint32_t other_color = green;
+//uint32_t another_color = yellow;
 
 // variables to keep track of the old button states
 bool oldState = HIGH;
@@ -230,7 +228,6 @@ void loop() {
   if(
     message ==  RECEIVED_THOUGHT || 
     message == RECEIVED_HELLO){
-    
     startShow(message, other_color, 10);
     // don't clear message
   }
@@ -345,7 +342,9 @@ void startShow(int i) {
 
 
 void startShow(int i, uint32_t c, uint8_t wait) {
-    Serial.println("Got single color message");
+   Serial.println("Got single color message");
+   // reset the brightness
+   strip.setBrightness(255);
   switch (i) {
     //-1
     case NONE: colorWipe(strip.Color(0, 0, 0), 10);    // Black/off
@@ -406,7 +405,6 @@ void startShow(int i, uint32_t colors[], int differentColors, uint8_t wait) {
   }
 }
 
-
 // Fill the dots one after the other with a color
 void colorWipe(uint32_t c, uint8_t wait) {
   for (uint16_t i = 0; i < strip.numPixels(); i++) {
@@ -415,7 +413,6 @@ void colorWipe(uint32_t c, uint8_t wait) {
     delay(wait);
   }
 }
-
 
 // Fill the dots one after the other with a color
 void spiralInAndOut(uint32_t c, uint8_t wait) {
@@ -437,7 +434,7 @@ Serial.print("Spiral in and out with color ");
     strip.setPixelColor(i, strip.Color(0,0,0)); 
         Serial.println(i);
     strip.show();
-    delay(wait);
+    delay(wait*4);
   }
 }
 
@@ -450,7 +447,7 @@ void spiralInAndOut(uint32_t colors [], int differentColors, uint8_t wait) {
     uint32_t color = colors[i%differentColors];
     strip.setPixelColor(i, color);
     strip.show();
-    delay(wait);
+    delay(wait*5);
   }
   delay(wait * 20);
   
@@ -458,7 +455,7 @@ void spiralInAndOut(uint32_t colors [], int differentColors, uint8_t wait) {
   for (uint16_t i = 0; i < strip.numPixels(); i++) {
     strip.setPixelColor(i, strip.Color(0,0,0)); 
     strip.show();
-    delay(wait);
+    delay(wait*4);
   }
 }
 
@@ -509,10 +506,9 @@ void lightSection(uint32_t c, uint8_t wait, const int pixels[], int numberOfPixe
   Serial.println(numberOfPixels);
   for (uint16_t i =0; i<numberOfPixels; i++){
       strip.setPixelColor(pixels[i], c);
-
   }
   strip.show();
-  delay(wait*40);
+  delay(wait*30);
 
 
 }
@@ -527,9 +523,7 @@ void lightSection(uint32_t colors [], int differentColors,  uint8_t wait, const 
 
   }
   strip.show();
-  delay(wait*40);
-
-
+  delay(wait*30);
 }
 
 
