@@ -1,5 +1,3 @@
-
-
 // This is a demonstration on how to use an input device to trigger changes on your neo pixels.
 // You should wire a momentary push button to connect from ground to a digital IO pin.  When you
 // press the button it will change to a new pixel animation.  Note that you need to press the
@@ -92,7 +90,7 @@ uint32_t green = strip.Color(3, 255, 94);
 uint32_t yellow = strip.Color(255, 247, 9);
 uint32_t blue = strip.Color(76, 196, 255);
 uint32_t pink = strip.Color(232, 52, 226);
-
+                                                                                                                                                                                                                                                                                                                                                           
 //pillow 1, no cap
 //uint32_t my_color = green;
 //uint32_t other_color = yellow;
@@ -233,11 +231,13 @@ void loop() {
   }
   
    if(message == RECEIVED_HUG ){
-    receivedColors[0] = other_color;
-    receivedColors[1] = another_color;
-    receivedColors[2] = my_color;
-    startShow(RECEIVED_THOUGHT, receivedColors, 3, 10); 
-    // don't clear 
+     startShow(message, other_color, 10);
+  // code for multiple color example
+  //    receivedColors[0] = other_color;
+  //    receivedColors[1] = another_color;
+  //    receivedColors[2] = my_color;
+  //    startShow(RECEIVED_THOUGHT, receivedColors, 3, 10); 
+  //    // don't clear 
   }
   
   
@@ -344,13 +344,16 @@ void startShow(int i) {
 void startShow(int i, uint32_t c, uint8_t wait) {
    Serial.println("Got single color message");
    // reset the brightness
-   strip.setBrightness(255);
+   
   switch (i) {
     //-1
-    case NONE: colorWipe(strip.Color(0, 0, 0), 10);    // Black/off
+    case NONE: 
+          colorWipe(strip.Color(0, 0, 0), 10);    // Black/off
+         strip.setBrightness(255);
       break;
       //1
-     case MISS_YOU: spiralInAndOut(c, wait); //spiralInAndOut(strip.Color(3, 255, 94), 20);  // Green 3, 255, 94 colorGlow();//colorWipe(strip.Color(255, 0, 0), 10);  // Red
+     case MISS_YOU: 
+     spiralInAndOut(c, wait); //spiralInAndOut(strip.Color(3, 255, 94), 20);  // Green 3, 255, 94 colorGlow();//colorWipe(strip.Color(255, 0, 0), 10);  // Red
       break;
       //2
     case HELLO_0:lightSection(c, wait, up_to_0,  sizeof(up_to_0)/sizeof(up_to_0[0])); //colorWipe(strip.Color(0, 0, 0), 10);    // Black/off
@@ -478,6 +481,7 @@ void colorGlow(uint32_t c, uint8_t wait){
       strip.show();
     }
   }
+  
 }
 
 //lights up all pixes in a fade in, fade out way
@@ -497,6 +501,7 @@ void colorGlow(uint32_t colors[], int differentColors, uint8_t wait){
       strip.show();
     }
   }
+ 
 }
 
 
